@@ -1,95 +1,84 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "./App.css";
+import React, { useEffect, useState } from 'react';
+import './App.css';
+import { FaSearch, FaEnvelope } from 'react-icons/fa';
+import { MdDateRange } from 'react-icons/md';
 
 function App() {
-  const [data, setData] = useState();
-  const [archive, setArchive] = useState([]);
-  const [showArchive, setShowArchive] = useState(false);
+  const [data, setData] = useState(null);
+  const [date, setDate] = useState('');
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
 
   useEffect(() => {
-    const archiveData = JSON.parse(localStorage.getItem('archiveData'));
-    if (archiveData) {
-      setArchive(archiveData);
-    }
-  
-    axios
-      .get(
-        "https://api.nasa.gov/planetary/apod?api_key=bFbU9M8uylkwZo3cFrPN2OpgNdvE4iT3NPOgInrZ"
-      )
-      .then(function (response) {
-        setData(response.data);
-        setArchive((prevArchive) => {
-          const isAlreadyArchived = prevArchive.some(
-            (item) => item.date === response.data.date
-          );
-          let newArchive;
-          if (isAlreadyArchived) {
-            newArchive = prevArchive.map((item) =>
-              item.date === response.data.date ? response.data : item
-            );
-          } else {
-            newArchive = [...prevArchive, response.data];
-          }
-          localStorage.setItem("archiveData", JSON.stringify(newArchive));
-          return newArchive;
-        });
-      })
-      .catch(function (error) {
-        console.log(error);
+    fetch('https://api.nasa.gov/planetary/apod?api_key=n7mazcYsGLFvh8XqwkDYB535d4h2t1pK5UbTH6kZ')
+      .then((response) => response.json())
+      .then((data) => {
+        setData(data);
+        setBackgroundImageUrl(data.url);
       });
   }, []);
 
-  if (!data) return <h3>Loading...</h3>;
-
-  const handleArchiveClick = () => {
-    setShowArchive(!showArchive);
-    if (!showArchive) {
-      const archiveData = JSON.parse(localStorage.getItem('archiveData'));
-      setArchive(archiveData || []);
+  useEffect(() => {
+    if (date) {
+      fetch(`https://api.nasa.gov/planetary/apod?api_key=n7mazcYsGLFvh8XqwkDYB535d4h2t1pK5UbTH6kZ
+      &date=${date}`)
+        .then((response) => response.json())
+        .then((data) => {
+          setData(data);
+          setBackgroundImageUrl(data.url);
+        });
     }
-  };
+  }, [date]);
 
   return (
-    <div className="App">
-      <h1>
-        Astronomy Photo Of The Day
-        <span role="img" aria-label="go!"></span>
-      </h1>
-      <p>
-        “Space is big. You just won't believe how vastly, hugely,
-        mind-bogglingly big it is. I mean, you may think it's a long way down the
-        road to the chemist's, but that's just peanuts to space.”
-      </p>
-      <p>― Douglas Adams, The Hitchhiker's Guide to the Galaxy</p>
+    <div
+      className="app"
+      style={{
+        backgroundImage: `url(${backgroundImageUrl})`,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center center',
+      }}
+    >
+      <div className="sidebar">
+        <h1 className="title">Astronomy Photo Of The Day</h1>
+        <div className="icon-container">
+          <FaSearch className="icon" />
+          <FaEnvelope className="icon" />
+        </div>
+      </div>
 
-      <img src={data.url} alt={data.title} />
+      <div className="content">
+        <header>
+          <p>
+            “Space is big. You just won't believe how vastly, hugely,
+            mind-bogglingly big it is. I mean, you may think it's a long way
+            down the road to the chemist's, but that's just peanuts to space.”
+          </p>
+          <p>Douglas Adams, The Hitchhiker's Guide to the Galaxy</p>
+        </header>
 
-      <p>{data.title}</p>
-      <p>
-        Explanation: <span>{data.explanation}</span>
-      </p>
-      <p>{data.date}</p>
-      <p>
-        Image Credit &amp; Copyright: <span>{data.copyright}</span>
-      </p>
-
-      <button onClick={handleArchiveClick}>
-        {showArchive ? "Arşivlenmiş Fotoğrafları Gizle" : "Arşivlenmiş Fotoğrafları Göster"}
-      </button>
-
-      {showArchive && (
-        <>
-          <h2>Arşivlenmiş Fotoğraflar:</h2>
-          {archive.map((item) => (
-            <div key={item.date}>
-              <img src={item.url} alt={item.title} />
-              <p>{item.title}</p>
-              <p>{item.date}</p>
+        {data && (
+          <div className="photo-container">
+            <div className="photo-overlay">
+              <p>{data.explanation}</p>
+              <p>{data.date}</p>
+              <p>
+                Image Credit &amp; Copyright: <span>{data.copyright}</span>
+              </p>
+              <div className="calendar">
+          <p>You can choose any date you want from the calendar just below.</p>
+          <input
+            type="date"
+            value={date}
+            onChange={(event) => setDate(event.target.value)
+            }
+          />
+        </div>
             </div>
-          ))}
-        </>
-      )}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
